@@ -1,0 +1,17 @@
+{
+  "manifest_version": 2,
+  "name": "Youtube Filter",
+  "version": "1.0",
+  "description": "Filter for custom video length",
+  "content_scripts": [
+    {
+      "matches": [
+        "*://www.youtube.com/results?*"
+      ],
+      "js": [
+        "ytfilter.js"
+      ]
+    }
+  ],
+  "permissions": []
+}
