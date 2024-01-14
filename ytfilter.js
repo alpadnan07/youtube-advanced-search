@@ -7,6 +7,10 @@ var maxHours = Infinity
 var maxMinutes = Infinity;
 var maxSeconds = Infinity;
 
+function if_filter(video_element) {
+	return true;
+}
+
 
 /* DOM elements */
 
@@ -132,6 +136,37 @@ function waitForElementById(selector, callback) {
 }
 
 
+/* Global arrays used as queues */
+var video_elements_no_time = new Set()
+var video_elements_to_filter = new Set()
+
+
+
+/* Periodically check if video elements' time stamps are loaded */
+setInterval(function () {
+	var indexes_to_remove = []
+	video_elements_no_time.forEach(function (video_element, i) {
+		if (!video_element.querySelector('#time-status')) return
+		indexes_to_remove.push(i)
+	})
+	indexes_to_remove.reverse()
+	indexes_to_remove.forEach(function (i) {
+		video_elements_to_filter.push(video_elements_no_time[i])
+		video_elements_no_time.splice(i, 1)
+	})
+}, 250)
+
+/* Periodically filter/ unfilter videos */
+setInterval(function () {
+	video_elements_to_filter.forEach(function (video_element) {
+		if (if_filter(video_element)) {
+			video_element.style.display = 'none'
+		}
+		else { video_element.style.display = '' }
+	})
+}, 250)
+
+
 
 console.log('loaded')
 
@@ -145,19 +180,30 @@ waitForElementById('filter-button', function () {
 waitForElementById('contents', function () {
 	var contents = document.querySelector('#contents')
 	var observer = new MutationObserver(function (mutations) {
+		videos = contents.querySelectorAll('ytd-video-renderer')
+		console.log('num videos', videos.length)
+		item_sections = contents.querySelectorAll('ytd-item-section-renderer')
+		console.log('printing item section lengths')
+		item_sections.forEach(function (item_section, index) {
+			item_selection_contents = item_section.querySelector('#contents')
+			console.log('index-length', index, item_selection_contents.children.length)
+		})
+		console.log('mutation length', mutations.length)
+
 		mutations.forEach(function (mutation) {
 			mutation.addedNodes.forEach(function (node) {
 				if (node.tagName !== "YTD-ITEM-SECTION-RENDERER") return
 				var elements_videos = Array.from(node.querySelector('#contents').children)
 				console.log(elements_videos)
 				elements_videos.forEach(function (video_element) {
-					if(video_element.tagName!=='YTD-VIDEO-RENDERER')return
+					if (video_element.tagName !== 'YTD-VIDEO-RENDERER') return
 					console.log(video_element.tagName)
-					console.log(video_element.querySelector('#dismissible'))
-					var element_time_status = video_element.querySelector('#time-status')
-					if(!element_time_status)return;
-					element_time_text = element_time_status.querySelector('#text')
-					console.log(element_time_text.innerHTML)
+					if (video_element.querySelector('#time-status')) {
+						video_elements_to_filter.push(video_element)
+					}
+					else {
+						video_elements_no_time.push(video_element)
+					}
 				})
 
 			})
@@ -166,4 +212,30 @@ waitForElementById('contents', function () {
 	var config = { childList: true }
 	observer.observe(contents, config);
 })
+
+
+
+/* Follow changes in the results, to filter out videos */
+var num_videos = 0
+
+waitForElementById('contents', function () {
+	var contents = document.querySelector('#contents')
+	var observer = new MutationObserver(function (mutations) {
+		videos = Array.from(contents.querySelectorAll('ytd-video-renderer'))
+		/* Return if no new videos have been added */
+		if (videos.length <= num_videos) return
+		for (const video of videos) {
+			if (video.querySelector('#time-status')) {
+				video_elements_to_filter.add(video)
+			}
+			else {
+				video_elements_no_time.add(video)
+			}
+		}
+	});
+	var config = { subtree: true }
+	observer.observe(contents, config);
+});
+
+
 
