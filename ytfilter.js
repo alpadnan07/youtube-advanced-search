@@ -6,6 +6,7 @@ const TAG_SEARCH_PLAYLIST = 'ytd-playlist-renderer'
 const TAG_SEARCH_SHORTS = 'ytd-reel-shelf-renderer'
 const TAG_SEARCH_CHANNEL = 'ytd-channel-renderer'
 const TAG_SEARCH_MIX = 'ytd-radio-renderer'
+const TAG_SEARCH_SHELF = 'ytd-shelf-renderer'
 const TAG_NAVIGATION = 'yt-navigate-start'
 
 /* Global Variables */
@@ -43,7 +44,7 @@ function main() {
 			var channels = Array.from(contents.querySelectorAll(TAG_SEARCH_CHANNEL));
 			var playlists = Array.from(contents.querySelectorAll(TAG_SEARCH_PLAYLIST));
 			var mixes = Array.from(contents.querySelectorAll(TAG_SEARCH_MIX));
-			// if (videos.length <= num_videos && shorts.length <= num_shorts && channels.length <= num_channels) return;
+			var shelves = Array.from(contents.querySelectorAll(TAG_SEARCH_SHELF));
 			for (const video of videos) {
 				elements_to_filter.add(video);
 			}
@@ -58,6 +59,9 @@ function main() {
 			}
 			for (const mix of mixes) {
 				elements_to_filter.add(mix)
+			}
+			for(const shelf of shelves){
+				elements_to_filter.add(shelf)
 			}
 			enforce_filters();
 		});
@@ -102,7 +106,7 @@ function get_video_length(video_element) {
 	return convertTimeToSeconds(string_time);
 }
 
-/* Video filter function */
+/* Filters videos based on length */
 function video_filter(video_element) {
 	var video_length = get_video_length(video_element);
 	if (isNaN(video_length)) return setting_show_shorts;
@@ -113,6 +117,16 @@ function video_filter(video_element) {
 	return setting_min_time < video_length;
 }
 
+/* Filters empty shelves */
+function shelf_filter(shelf_element){
+	shelf_items = shelf_element.querySelector('#dismissible').querySelector('#contents').querySelector('#items').children
+	for(shelf_item of shelf_items){
+		/* shelf has at least one visible element */
+		if(shelf_item.style.display !== 'none')return true;
+	}
+	return false;
+}
+
 /* Search filter function */
 function search_filter(search_element) {
 	if (search_element.tagName === TAG_SEARCH_VIDEO.toUpperCase()) return video_filter(search_element);
@@ -120,7 +134,7 @@ function search_filter(search_element) {
 	if (search_element.tagName === TAG_SEARCH_CHANNEL.toUpperCase()) return setting_show_channels;
 	if (search_element.tagName === TAG_SEARCH_PLAYLIST.toUpperCase()) return setting_show_playlists;
 	if (search_element.tagName === TAG_SEARCH_MIX.toUpperCase()) return setting_show_mixes;
-	
+	if (search_element.tagName === TAG_SEARCH_SHELF.toUpperCase())return shelf_filter(search_element)
 }
 
 /* Function to save time settings */
