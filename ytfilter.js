@@ -194,9 +194,6 @@ function enforce_filters() {
 
 /* Popup window setup */
 var popup = document.createElement('div');
-popup.id = 'myPopup';
-// popup.style.width = '50%';
-// popup.style.height = '60%';
 /* Make the popup window size 'kinda' responsive */
 popup.style.maxWidth = '90%'
 popup.style.maxHeight = '90%'
@@ -263,14 +260,12 @@ document.addEventListener('click', function handleClickOutside(event) {
 }, true);
 
 /* Event listeners for filter settings */
-// document.getElementById('button-filter-time-save').addEventListener('click', saveTimeSettings, true);
 document.getElementById('minHours').addEventListener('input', saveTimeSettings)
 document.getElementById('minMinutes').addEventListener('input', saveTimeSettings)
 document.getElementById('minSeconds').addEventListener('input', saveTimeSettings)
 document.getElementById('maxHours').addEventListener('input', saveTimeSettings)
 document.getElementById('maxMinutes').addEventListener('input', saveTimeSettings)
 document.getElementById('maxSeconds').addEventListener('input', saveTimeSettings)
-
 document.getElementById('showYoutubeShorts').addEventListener('change', saveShortsSetting);
 document.getElementById('showChannelRecommendations').addEventListener('change', saveShowChannelsSetting);
 document.getElementById('showPlaylists').addEventListener('change', saveShowPlaylistsSetting);
