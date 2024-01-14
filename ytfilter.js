@@ -1,11 +1,11 @@
 /* Some tag and ID names for query selection */
 const ID_FILTER_BUTTON = 'filter-button';
-
 const TAG_SEARCH_PAGE = 'ytd-search'
 const TAG_SEARCH_VIDEO = 'ytd-video-renderer'
 const TAG_SEARCH_PLAYLIST = 'ytd-playlist-renderer'
 const TAG_SEARCH_SHORTS = 'ytd-reel-shelf-renderer'
 const TAG_SEARCH_CHANNEL = 'ytd-channel-renderer'
+const TAG_SEARCH_MIX = 'ytd-radio-renderer'
 const TAG_NAVIGATION = 'yt-navigate-start'
 
 /* Global Variables */
@@ -16,6 +16,8 @@ var setting_max_time = 0;
 var setting_show_shorts = true;
 var setting_show_channels = true;
 var setting_show_playlists = true;
+var setting_show_mixes = true;
+
 /* Main Function */
 function main() {
 	if (observer) {
@@ -40,6 +42,7 @@ function main() {
 			var shorts = Array.from(contents.querySelectorAll(TAG_SEARCH_SHORTS));
 			var channels = Array.from(contents.querySelectorAll(TAG_SEARCH_CHANNEL));
 			var playlists = Array.from(contents.querySelectorAll(TAG_SEARCH_PLAYLIST));
+			var mixes = Array.from(contents.querySelectorAll(TAG_SEARCH_MIX));
 			// if (videos.length <= num_videos && shorts.length <= num_shorts && channels.length <= num_channels) return;
 			for (const video of videos) {
 				elements_to_filter.add(video);
@@ -52,6 +55,9 @@ function main() {
 			}
 			for (const playlist of playlists) {
 				elements_to_filter.add(playlist)
+			}
+			for (const mix of mixes) {
+				elements_to_filter.add(mix)
 			}
 			enforce_filters();
 		});
@@ -113,6 +119,8 @@ function search_filter(search_element) {
 	if (search_element.tagName === TAG_SEARCH_SHORTS.toUpperCase()) return setting_show_shorts;
 	if (search_element.tagName === TAG_SEARCH_CHANNEL.toUpperCase()) return setting_show_channels;
 	if (search_element.tagName === TAG_SEARCH_PLAYLIST.toUpperCase()) return setting_show_playlists;
+	if (search_element.tagName === TAG_SEARCH_MIX.toUpperCase()) return setting_show_mixes;
+	
 }
 
 /* Function to save time settings */
@@ -152,7 +160,11 @@ function saveShowPlaylistsSetting() {
 	setting_show_playlists = document.getElementById('showPlaylists').checked;
 	enforce_filters();
 }
-
+/* Function to save mix setting */
+function saveShowMixesSetting() {
+	setting_show_mixes = document.getElementById('showMixes').checked;
+	enforce_filters();
+}
 
 function waitForElementById(selector, callback) {
 	let previousUrl = window.location.href;
@@ -247,6 +259,15 @@ popup.innerHTML = `
             <label for="showPlaylists">Show</label>
         </div>
     </div>
+    <div style="flex: 1; padding: 10px;">
+        <h3>Show Mixes</h3>
+        <div>
+            <input type="checkbox" checked="true" id="showMixes" name="showMixes">
+            <label for="showMixes">Show</label>
+        </div>
+    </div>
+
+
 </div>
 `;
 
@@ -269,6 +290,7 @@ document.getElementById('maxSeconds').addEventListener('input', saveTimeSettings
 document.getElementById('showYoutubeShorts').addEventListener('change', saveShortsSetting);
 document.getElementById('showChannelRecommendations').addEventListener('change', saveShowChannelsSetting);
 document.getElementById('showPlaylists').addEventListener('change', saveShowPlaylistsSetting);
+document.getElementById('showMixes').addEventListener('change', saveShowMixesSetting);
 
 /* Advanced search filter button setup */
 var extraFilterButton = document.createElement('button');
