@@ -1,5 +1,12 @@
-/* Additional constants */
-const FILTER_BUTTON_ID = 'filter-button';
+/* Some tag and ID names for query selection */
+const ID_FILTER_BUTTON = 'filter-button';
+
+const TAG_SEARCH_PAGE = 'ytd-search'
+const TAG_SEARCH_VIDEO = 'ytd-video-renderer'
+const TAG_SEARCH_PLAYLIST = 'ytd-playlist-renderer'
+const TAG_SEARCH_SHORTS = 'ytd-reel-shelf-renderer'
+const TAG_SEARCH_CHANNEL = 'ytd-channel-renderer'
+const TAG_NAVIGATION = 'yt-navigate-start'
 
 /* Global Variables */
 var observer;
@@ -15,24 +22,24 @@ function main() {
 		observer.disconnect();
 	}
 	elements_to_filter.clear();
-	if (!window.location.toString().includes('results')) return
+	if (!window.location.toString().includes('/results')) return
 	console.log('begin injection')
 	// Insert advanced search button
-	waitForElementById(FILTER_BUTTON_ID, function () {
-		var fbd = document.getElementById(FILTER_BUTTON_ID);
+	waitForElementById(ID_FILTER_BUTTON, function () {
+		var fbd = document.getElementById(ID_FILTER_BUTTON);
 		fbd.insertAdjacentElement('afterend', extraFilterButton);
 	});
 
 	// Follow changes in the results, to filter out videos
-	waitForElementsByQuerySelector('ytd-search', function () {
-		ytd_search = document.querySelector('ytd-search')
+	waitForElementsByQuerySelector(TAG_SEARCH_PAGE, function () {
+		ytd_search = document.querySelector(TAG_SEARCH_PAGE)
 		contents = ytd_search.querySelector('#contents')
 
 		observer = new MutationObserver(function (mutations) {
-			var videos = Array.from(contents.querySelectorAll('ytd-video-renderer'));
-			var shorts = Array.from(contents.querySelectorAll('ytd-reel-shelf-renderer'));
-			var channels = Array.from(contents.querySelectorAll('ytd-channel-renderer'));
-			var playlists = Array.from(contents.querySelectorAll('ytd-playlist-renderer'));
+			var videos = Array.from(contents.querySelectorAll(TAG_SEARCH_VIDEO));
+			var shorts = Array.from(contents.querySelectorAll(TAG_SEARCH_SHORTS));
+			var channels = Array.from(contents.querySelectorAll(TAG_SEARCH_CHANNEL));
+			var playlists = Array.from(contents.querySelectorAll(TAG_SEARCH_PLAYLIST));
 			// if (videos.length <= num_videos && shorts.length <= num_shorts && channels.length <= num_channels) return;
 			for (const video of videos) {
 				elements_to_filter.add(video);
@@ -54,7 +61,7 @@ function main() {
 }
 
 /* Event Listener for YouTube's dynamic navigation */
-document.addEventListener('yt-navigate-start', function () {
+document.addEventListener(TAG_NAVIGATION, function () {
 	main();
 });
 
@@ -102,10 +109,10 @@ function video_filter(video_element) {
 
 /* Search filter function */
 function search_filter(search_element) {
-	if (search_element.tagName === "YTD-VIDEO-RENDERER") return video_filter(search_element);
-	if (search_element.tagName === "YTD-REEL-SHELF-RENDERER") return setting_show_shorts;
-	if (search_element.tagName === "YTD-CHANNEL-RENDERER") return setting_show_channels;
-	if(search_element.tagName === "YTD-PLAYLIST-RENDERER") return setting_show_playlists;
+	if (search_element.tagName === TAG_SEARCH_VIDEO.toUpperCase()) return video_filter(search_element);
+	if (search_element.tagName === TAG_SEARCH_SHORTS.toUpperCase()) return setting_show_shorts;
+	if (search_element.tagName === TAG_SEARCH_CHANNEL.toUpperCase()) return setting_show_channels;
+	if (search_element.tagName === TAG_SEARCH_PLAYLIST.toUpperCase()) return setting_show_playlists;
 }
 
 /* Function to save time settings */
@@ -188,8 +195,13 @@ function enforce_filters() {
 /* Popup window setup */
 var popup = document.createElement('div');
 popup.id = 'myPopup';
-popup.style.width = '50%';
-popup.style.height = '60%';
+// popup.style.width = '50%';
+// popup.style.height = '60%';
+/* Make the popup window size 'kinda' responsive */
+popup.style.maxWidth = '90%'
+popup.style.maxHeight = '90%'
+popup.style.overflow = 'auto'
+
 popup.style.display = 'none';
 popup.style.position = 'fixed'; // Use 'fixed' to position relative to the viewport
 popup.style.left = '50%'; // Center horizontally
@@ -216,7 +228,6 @@ popup.innerHTML = `
             <input type="number" id="maxMinutes" placeholder="Minutes" min="0" max="59" style="width: 60px;">
             <input type="number" id="maxSeconds" placeholder="Seconds" min="0" max="59" style="width: 60px;">
         </div>
-        <button id="button-filter-time-save" >Apply</button>
     </div>
     <div style="flex: 1; padding: 10px;">
         <h3>Show Youtube Shorts</h3>
@@ -239,7 +250,6 @@ popup.innerHTML = `
             <label for="showPlaylists">Show</label>
         </div>
     </div>
-
 </div>
 `;
 
@@ -253,7 +263,14 @@ document.addEventListener('click', function handleClickOutside(event) {
 }, true);
 
 /* Event listeners for filter settings */
-document.getElementById('button-filter-time-save').addEventListener('click', saveTimeSettings, true);
+// document.getElementById('button-filter-time-save').addEventListener('click', saveTimeSettings, true);
+document.getElementById('minHours').addEventListener('input', saveTimeSettings)
+document.getElementById('minMinutes').addEventListener('input', saveTimeSettings)
+document.getElementById('minSeconds').addEventListener('input', saveTimeSettings)
+document.getElementById('maxHours').addEventListener('input', saveTimeSettings)
+document.getElementById('maxMinutes').addEventListener('input', saveTimeSettings)
+document.getElementById('maxSeconds').addEventListener('input', saveTimeSettings)
+
 document.getElementById('showYoutubeShorts').addEventListener('change', saveShortsSetting);
 document.getElementById('showChannelRecommendations').addEventListener('change', saveShowChannelsSetting);
 document.getElementById('showPlaylists').addEventListener('change', saveShowPlaylistsSetting);
@@ -276,6 +293,3 @@ extraFilterButton.innerHTML = "Advanced Search Filters";
 extraFilterButton.onclick = () => {
 	popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
 };
-
-
-
