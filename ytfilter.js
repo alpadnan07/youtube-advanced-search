@@ -92,7 +92,7 @@ function saveTimeSettings() {
 	console.log(`Saved filter time settings: Min - ${minHours}:${minMinutes}:${minSeconds}, Max - ${maxHours}:${maxMinutes}:${maxSeconds}`);
 }
 
-document.getElementById('button-filter-time-save').addEventListener('click',saveTimeSettings,true)
+document.getElementById('button-filter-time-save').addEventListener('click', saveTimeSettings, true)
 
 
 /* "Popup window open" button */
@@ -135,9 +135,35 @@ function waitForElementById(selector, callback) {
 
 console.log('loaded')
 
+/* Insert advanced search button */
 waitForElementById('filter-button', function () {
 	var fbd = document.getElementById('filter-button');
 	fbd.insertAdjacentElement('afterend', extraFilterButton)
-	console.log('burada')
+})
+
+/* Follow changes in the results, to filter out videos */
+waitForElementById('contents', function () {
+	var contents = document.querySelector('#contents')
+	var observer = new MutationObserver(function (mutations) {
+		mutations.forEach(function (mutation) {
+			mutation.addedNodes.forEach(function (node) {
+				if (node.tagName !== "YTD-ITEM-SECTION-RENDERER") return
+				var elements_videos = Array.from(node.querySelector('#contents').children)
+				console.log(elements_videos)
+				elements_videos.forEach(function (video_element) {
+					if(video_element.tagName!=='YTD-VIDEO-RENDERER')return
+					console.log(video_element.tagName)
+					console.log(video_element.querySelector('#dismissible'))
+					var element_time_status = video_element.querySelector('#time-status')
+					if(!element_time_status)return;
+					element_time_text = element_time_status.querySelector('#text')
+					console.log(element_time_text.innerHTML)
+				})
+
+			})
+		});
+	});
+	var config = { childList: true }
+	observer.observe(contents, config);
 })
 
