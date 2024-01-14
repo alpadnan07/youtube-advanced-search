@@ -1,3 +1,6 @@
+/* Additional constants */
+const FILTER_BUTTON_ID = 'filter-button';
+
 /* Global Variables */
 var observer;
 var elements_to_filter = new Set();
@@ -5,14 +8,15 @@ var setting_min_time = 0;
 var setting_max_time = 0;
 var setting_show_shorts = true;
 var setting_show_channels = true;
-
+var setting_show_playlists = true;
 /* Main Function */
 function main() {
 	if (observer) {
 		observer.disconnect();
 	}
 	elements_to_filter.clear();
-
+	if (!window.location.toString().includes('results')) return
+	console.log('begin injection')
 	// Insert advanced search button
 	waitForElementById(FILTER_BUTTON_ID, function () {
 		var fbd = document.getElementById(FILTER_BUTTON_ID);
@@ -20,13 +24,16 @@ function main() {
 	});
 
 	// Follow changes in the results, to filter out videos
-	waitForElementById('contents', function () {
-		var contents = document.querySelector('#contents');
+	waitForElementsByQuerySelector('ytd-search', function () {
+		ytd_search = document.querySelector('ytd-search')
+		contents = ytd_search.querySelector('#contents')
+
 		observer = new MutationObserver(function (mutations) {
 			var videos = Array.from(contents.querySelectorAll('ytd-video-renderer'));
 			var shorts = Array.from(contents.querySelectorAll('ytd-reel-shelf-renderer'));
 			var channels = Array.from(contents.querySelectorAll('ytd-channel-renderer'));
-			if (videos.length <= num_videos && shorts.length <= num_shorts && channels.length <= num_channels) return;
+			var playlists = Array.from(contents.querySelectorAll('ytd-playlist-renderer'));
+			// if (videos.length <= num_videos && shorts.length <= num_shorts && channels.length <= num_channels) return;
 			for (const video of videos) {
 				elements_to_filter.add(video);
 			}
@@ -35,6 +42,9 @@ function main() {
 			}
 			for (const channel of channels) {
 				elements_to_filter.add(channel);
+			}
+			for (const playlist of playlists) {
+				elements_to_filter.add(playlist)
 			}
 			enforce_filters();
 		});
@@ -94,8 +104,8 @@ function video_filter(video_element) {
 function search_filter(search_element) {
 	if (search_element.tagName === "YTD-VIDEO-RENDERER") return video_filter(search_element);
 	if (search_element.tagName === "YTD-REEL-SHELF-RENDERER") return setting_show_shorts;
-	if (search_element.tagName === "YTD-CHANNEL-RENDERER")
-		return setting_show_channels;
+	if (search_element.tagName === "YTD-CHANNEL-RENDERER") return setting_show_channels;
+	if(search_element.tagName === "YTD-PLAYLIST-RENDERER") return setting_show_playlists;
 }
 
 /* Function to save time settings */
@@ -130,20 +140,29 @@ function saveShowChannelsSetting() {
 	setting_show_channels = document.getElementById('showChannelRecommendations').checked;
 	enforce_filters();
 }
+/* Function to save playlist setting */
+function saveShowPlaylistsSetting() {
+	setting_show_playlists = document.getElementById('showPlaylists').checked;
+	enforce_filters();
+}
 
-/* Function to wait for an element with a specific ID */
-// function waitForElementById(selector, callback) {
-// 	let x = setInterval(function () {
-// 		if (document.getElementById(selector)) {
-// 			callback();
-// 			clearInterval(x);
-// 		}
-// 	}, 250);
-// }
+
 function waitForElementById(selector, callback) {
 	let previousUrl = window.location.href;
 	let intervalId = setInterval(function () {
 		if (document.getElementById(selector)) {
+			clearInterval(intervalId);
+			callback();
+		} else if (window.location.href !== previousUrl) {
+			// Clear interval if the URL changes
+			clearInterval(intervalId);
+		}
+	}, 250);
+}
+function waitForElementsByQuerySelector(selector, callback) {
+	let previousUrl = window.location.href;
+	let intervalId = setInterval(function () {
+		if (document.querySelector(selector)) {
 			clearInterval(intervalId);
 			callback();
 		} else if (window.location.href !== previousUrl) {
@@ -213,6 +232,14 @@ popup.innerHTML = `
             <label for="showChannelRecommendations">Show</label>
         </div>
     </div>
+    <div style="flex: 1; padding: 10px;">
+        <h3>Show Playlists</h3>
+        <div>
+            <input type="checkbox" checked="true" id="showPlaylists" name="showPlaylists">
+            <label for="showPlaylists">Show</label>
+        </div>
+    </div>
+
 </div>
 `;
 
@@ -229,14 +256,26 @@ document.addEventListener('click', function handleClickOutside(event) {
 document.getElementById('button-filter-time-save').addEventListener('click', saveTimeSettings, true);
 document.getElementById('showYoutubeShorts').addEventListener('change', saveShortsSetting);
 document.getElementById('showChannelRecommendations').addEventListener('change', saveShowChannelsSetting);
+document.getElementById('showPlaylists').addEventListener('change', saveShowPlaylistsSetting);
 
 /* Advanced search filter button setup */
 var extraFilterButton = document.createElement('button');
+extraFilterButton.style.border = 'none';
+extraFilterButton.style.padding = '6px 15px'; // Smaller padding
+extraFilterButton.style.borderRadius = '15px'; // Adjusted for smaller size
+extraFilterButton.style.fontFamily = 'Roboto, Arial, sans-serif';
+extraFilterButton.style.fontSize = '12px'; // Smaller font size
+extraFilterButton.style.cursor = 'pointer';
+extraFilterButton.style.boxShadow = '0 2px 2px 0 rgba(0,0,0,0.24)';
+extraFilterButton.style.margin = '5px 0';
+extraFilterButton.style.display = 'inline-block';
+extraFilterButton.style.lineHeight = 'normal';
+extraFilterButton.style.transition = 'background-color 0.3s';
+
 extraFilterButton.innerHTML = "Advanced Search Filters";
 extraFilterButton.onclick = () => {
 	popup.style.display = popup.style.display === 'none' ? 'block' : 'none';
 };
 
-/* Additional constants */
-const FILTER_BUTTON_ID = 'filter-button';
+
 
