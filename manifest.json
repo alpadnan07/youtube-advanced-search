@@ -6,7 +6,7 @@
   "content_scripts": [
     {
       "matches": [
-        "*://www.youtube.com/results?*"
+        "*://www.youtube.com/*"
       ],
       "js": [
         "ytfilter.js"
