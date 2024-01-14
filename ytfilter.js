@@ -36,14 +36,14 @@ function get_video_length(video_element) {
 }
 function video_filter(video_element) {
 	video_length = get_video_length(video_element)
-	console.log('video_filter',video_length,setting_min_time)
+	console.log('video_filter', video_length, setting_min_time)
 	/* video is a short */
 	if (isNaN(video_length)) return setting_show_shorts
 
 	if (setting_max_time > 0) {
 		return (setting_max_time > video_length) && (setting_min_time < video_length)
 	}
-	console.log('burada',setting_min_time < video_length,video_length,setting_min_time)
+	console.log('burada', setting_min_time < video_length, video_length, setting_min_time)
 	return setting_min_time < video_length
 }
 
@@ -228,43 +228,59 @@ function enforce_filters() {
 	}
 }
 
+var observer = null
+
+function inject_filter() {
+	/* Insert advanced search button */
+	waitForElementById(FILTER_BUTTON_ID, function () {
+		var fbd = document.getElementById(FILTER_BUTTON_ID);
+		fbd.insertAdjacentElement('afterend', extraFilterButton)
+	})
+
+
+
+	/* Follow changes in the results, to filter out videos */
+	var num_videos = 0
+	var num_shorts = 0
+	var num_channels = 0
+	waitForElementById('contents', function () {
+		var contents = document.querySelector('#contents')
+		var observer = new MutationObserver(function (mutations) {
+			videos = Array.from(contents.querySelectorAll('ytd-video-renderer'))
+			shorts = Array.from(contents.querySelectorAll('ytd-reel-shelf-renderer'))
+			channels = Array.from(contents.querySelectorAll('ytd-channel-renderer'))
+			/* Return if no new content have been added to search results */
+			if (videos.length <= num_videos && shorts.length <= shorts && channels.length <= num_channels) return
+			for (const video of videos) {
+				elements_to_filter.add(video)
+			}
+			for (const short of shorts) {
+				elements_to_filter.add(short)
+			}
+			for (const channel of channels) {
+				elements_to_filter.add(channel)
+			}
+			/* Enforce filters every time something has changed */
+			enforce_filters()
+
+		});
+		var config = { childList: true, subtree: true }
+		observer.observe(contents, config);
+	});
+
+}
+
 
 console.log('loaded')
 
-/* Insert advanced search button */
-waitForElementById(FILTER_BUTTON_ID, function () {
-	var fbd = document.getElementById(FILTER_BUTTON_ID);
-	fbd.insertAdjacentElement('afterend', extraFilterButton)
-})
+document.addEventListener('yt-navigate-start', function () {
+	if (window.location.toString().includes('results?')) {
+		inject_filter()
+	}
+	else{
 
+	}
+}
+);
 
-
-/* Follow changes in the results, to filter out videos */
-var num_videos = 0
-var num_shorts = 0
-var num_channels = 0
-waitForElementById('contents', function () {
-	var contents = document.querySelector('#contents')
-	var observer = new MutationObserver(function (mutations) {
-		videos = Array.from(contents.querySelectorAll('ytd-video-renderer'))
-		shorts = Array.from(contents.querySelectorAll('ytd-reel-shelf-renderer'))
-		channels = Array.from(contents.querySelectorAll('ytd-channel-renderer'))
-		/* Return if no new content have been added to search results */
-		if (videos.length <= num_videos && shorts.length <= shorts && channels.length <= num_channels) return
-		for (const video of videos) {
-			elements_to_filter.add(video)
-		}
-		for (const short of shorts) {
-			elements_to_filter.add(short)
-		}
-		for (const channel of channels) {
-			elements_to_filter.add(channel)
-		}
-		/* Enforce filters every time something has changed */
-		enforce_filters()
-
-	});
-	var config = { childList: true, subtree: true }
-	observer.observe(contents, config);
-});
-
+if(window.location.toString().includes('?results'))inject_filter()
